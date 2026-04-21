@@ -7,9 +7,11 @@ import api from "../utils/api";
 const MenuPage = () => {
   const [searchParams] = useSearchParams();
   const tableParam = searchParams.get("table");
-  const tableNumber = tableParam && !Number.isNaN(Number(tableParam))
-    ? tableParam
-    : null;
+  const parsedTableNumber = Number(tableParam);
+  const tableNumber =
+    Number.isInteger(parsedTableNumber) && parsedTableNumber > 0
+      ? parsedTableNumber
+      : null;
 
   const [itemsByCategory, setItemsByCategory] = useState({});
   const [categories, setCategories] = useState([]);
@@ -18,8 +20,15 @@ const MenuPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const { cartItems, totalItems, totalPrice, addItem, increment, decrement } =
-    useCart();
+  const {
+    cartItems,
+    totalItems,
+    totalPrice,
+    addItem,
+    increment,
+    decrement,
+    setTableNumber
+  } = useCart();
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -38,6 +47,12 @@ const MenuPage = () => {
 
     fetchMenu();
   }, []);
+
+  useEffect(() => {
+    if (tableNumber) {
+      setTableNumber(tableNumber);
+    }
+  }, [setTableNumber, tableNumber]);
 
   const allItems = useMemo(
     () => Object.values(itemsByCategory).flat(),

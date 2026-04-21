@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useReducer } from "react";
+import { createContext, useContext, useMemo, useReducer, useState } from "react";
 
 const CartContext = createContext(null);
 
@@ -67,6 +67,7 @@ const cartReducer = (state, action) => {
 
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [tableNumber, setTableNumber] = useState(null);
 
   const totalItems = useMemo(
     () => state.items.reduce((total, item) => total + item.quantity, 0),
@@ -84,13 +85,15 @@ export const CartProvider = ({ children }) => {
       cartItems: state.items,
       totalItems,
       totalPrice,
+      tableNumber,
+      setTableNumber,
       addItem: (item) => dispatch({ type: "ADD_ITEM", payload: item }),
       removeItem: (id) => dispatch({ type: "REMOVE_ITEM", payload: id }),
       increment: (id) => dispatch({ type: "INCREMENT", payload: id }),
       decrement: (id) => dispatch({ type: "DECREMENT", payload: id }),
       clearCart: () => dispatch({ type: "CLEAR_CART" })
     }),
-    [state.items, totalItems, totalPrice]
+    [state.items, tableNumber, totalItems, totalPrice]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

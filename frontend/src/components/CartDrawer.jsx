@@ -1,7 +1,56 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import api from "../utils/api";
 
 const CartDrawer = ({ isOpen, onClose }) => {
-  const { cartItems, totalPrice, increment, decrement } = useCart();
+  const {
+    cartItems,
+    totalPrice,
+    increment,
+    decrement,
+    clearCart,
+    tableNumber
+  } = useCart();
+  const [note, setNote] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handlePlaceOrder = async () => {
+    if (!tableNumber) {
+      setError("Table number is missing. Please rescan your QR code.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const items = cartItems.map((item) => ({
+        menuItemId: item._id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        isVeg: item.isVeg
+      }));
+
+      const { data } = await api.post("/orders", {
+        tableNumber,
+        items,
+        note: note.trim() || undefined
+      });
+
+      clearCart();
+      setNote("");
+      onClose();
+      navigate(`/order-status?table=${tableNumber}&orderId=${data._id}`);
+    } catch (requestError) {
+      setError("Unable to place the order right now. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div
@@ -81,12 +130,29 @@ const CartDrawer = ({ isOpen, onClose }) => {
               ${totalPrice.toFixed(2)}
             </p>
           </div>
+          <label className="mt-4 block text-sm font-medium text-gray-700">
+            Add a note for kitchen
+          </label>
+          <textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            maxLength={200}
+            placeholder="E.g. less spicy, no onions…"
+            className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm transition focus:border-brand/50 focus:outline-none"
+            rows={3}
+          />
           <button
             type="button"
-            className="mt-4 w-full rounded-full border border-brand bg-brand/10 py-3 text-sm font-semibold text-brand transition hover:bg-brand/20"
+            onClick={handlePlaceOrder}
+            disabled={isSubmitting || cartItems.length === 0 || !tableNumber}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-brand bg-brand/10 py-3 text-sm font-semibold text-brand transition hover:bg-brand/20 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400"
           >
-            Place Order
+            {isSubmitting && (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+            )}
+            {isSubmitting ? "Placing..." : "Place Order"}
           </button>
+          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         </div>
       </div>
     </div>
