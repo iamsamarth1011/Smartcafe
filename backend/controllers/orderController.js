@@ -143,10 +143,101 @@ const getActiveOrders = async (_req, res) => {
   }
 };
 
+const getBillByTable = async (req, res) => {
+  try {
+    const parsedTableNumber = Number(req.params.tableNumber);
+
+    if (!Number.isInteger(parsedTableNumber) || parsedTableNumber <= 0) {
+      return res.status(400).json({ message: "Invalid table number" });
+    }
+
+    const orders = await Order.find({
+      tableNumber: parsedTableNumber,
+      status: { $ne: "paid" }
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    if (orders.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No active orders for this table" });
+    }
+
+    const formattedOrders = orders.map((order) => ({
+      _id: order._id,
+      items: order.items,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      createdAt: order.createdAt,
+      note: order.note
+    }));
+
+    const totalAmount = formattedOrders.reduce(
+      (total, order) => total + order.totalAmount,
+      0
+    );
+
+    const itemCount = formattedOrders.reduce(
+      (total, order) =>
+        total + order.items.reduce((sum, item) => sum + item.quantity, 0),
+      0
+    );
+
+    res.json({
+      tableNumber: parsedTableNumber,
+      orders: formattedOrders,
+      totalAmount,
+      itemCount
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const markTablePaid = async (req, res) => {
+  try {
+    const parsedTableNumber = Number(req.params.tableNumber);
+
+    if (!Number.isInteger(parsedTableNumber) || parsedTableNumber <= 0) {
+      return res.status(400).json({ message: "Invalid table number" });
+    }
+
+    const table = await Table.findOneAndUpdate(
+      { tableNumber: parsedTableNumber },
+      { isOccupied: false, currentSessionId: null },
+      { new: true }
+    );
+
+    if (!table) {
+      return res.status(404).json({ message: "Table not found" });
+    }
+
+    await Order.updateMany(
+      { tableNumber: parsedTableNumber, status: { $ne: "paid" } },
+      { status: "paid" }
+    );
+
+    const io = req.app.locals.io;
+    if (io) {
+      io.emit("table_paid", { tableNumber: parsedTableNumber });
+    }
+
+    res.json({
+      message: "Table settled successfully",
+      tableNumber: parsedTableNumber
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   placeOrder,
   getOrderById,
   getOrdersByTable,
   updateOrderStatus,
-  getActiveOrders
+  getActiveOrders,
+  getBillByTable,
+  markTablePaid
 };

@@ -87,12 +87,21 @@ const KitchenPage = () => {
       );
     };
 
+    const handleTablePaid = ({ tableNumber }) => {
+      if (!tableNumber) return;
+      setOrders((prev) =>
+        prev.filter((item) => item.tableNumber !== tableNumber)
+      );
+    };
+
     socket.on("new_order", handleNewOrder);
     socket.on("order_status_updated", handleStatusUpdate);
+    socket.on("table_paid", handleTablePaid);
 
     return () => {
       socket.off("new_order", handleNewOrder);
       socket.off("order_status_updated", handleStatusUpdate);
+      socket.off("table_paid", handleTablePaid);
     };
   }, []);
 
