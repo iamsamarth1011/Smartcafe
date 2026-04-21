@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import api from "../utils/api";
 import socket from "../utils/socket";
+import SkeletonCard from "../components/SkeletonCard";
 
 const statusConfig = {
   pending: {
@@ -44,6 +45,7 @@ const statusConfig = {
 };
 
 const OrderStatusPage = () => {
+  const restaurantName = import.meta.env.VITE_RESTAURANT_NAME;
   const [searchParams] = useSearchParams();
   const tableParam = searchParams.get("table");
   const orderId = searchParams.get("orderId");
@@ -116,7 +118,7 @@ const OrderStatusPage = () => {
     <div className="min-h-screen bg-cream pb-16">
       <header className="sticky top-0 z-30 border-b border-brand/10 bg-cream/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <h1 className="text-2xl font-semibold">The Golden Fork</h1>
+          <h1 className="text-2xl font-semibold">{restaurantName}</h1>
           <span className="rounded-full border border-brand/40 bg-brand/10 px-4 py-1 text-sm font-semibold text-brand">
             Table {tableNumber}
           </span>
@@ -125,18 +127,20 @@ const OrderStatusPage = () => {
 
       <main className="mx-auto flex max-w-3xl flex-col items-center px-6 py-12 text-center">
         {isLoading ? (
-          <p className="text-sm text-gray-500">Loading order status...</p>
+          <div className="w-full max-w-xl">
+            <SkeletonCard lines={4} />
+          </div>
         ) : error ? (
           <p className="text-sm text-red-600">{error}</p>
         ) : (
           <>
             <div className="flex flex-col items-center gap-4">
               <div
-                className={`flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-sm ${
+                className={`flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm md:h-16 md:w-16 ${
                   config.pulse ? "animate-pulse" : ""
                 }`}
               >
-                <StatusIcon className={`h-12 w-12 ${config.color}`} />
+                <StatusIcon className={`h-10 w-10 md:h-8 md:w-8 ${config.color}`} />
               </div>
               <h2 className="text-2xl font-semibold">{config.label}</h2>
             </div>

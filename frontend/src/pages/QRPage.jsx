@@ -1,13 +1,15 @@
 import { QRCodeCanvas } from "qrcode.react";
 
 const QRPage = () => {
-  const tables = Array.from({ length: 10 }, (_, index) => index + 1);
-  const baseUrl = "http://localhost:5173/menu?table=";
+  const restaurantName = import.meta.env.VITE_RESTAURANT_NAME;
+  const tableCount = Number(import.meta.env.VITE_TABLE_COUNT || 10);
+  const tables = Array.from({ length: tableCount }, (_, index) => index + 1);
+  const baseUrl = `${window.location.origin}/menu?table=`;
 
   return (
     <div className="min-h-screen bg-cream px-6 py-10">
       <div className="mx-auto flex max-w-5xl items-center justify-between">
-        <h1 className="text-2xl font-semibold">The Golden Fork</h1>
+        <h1 className="text-2xl font-semibold">{restaurantName}</h1>
         <button
           type="button"
           onClick={() => window.print()}

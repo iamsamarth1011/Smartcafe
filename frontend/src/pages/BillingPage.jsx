@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Receipt } from "lucide-react";
+import toast from "react-hot-toast";
 import api from "../utils/api";
 import socket from "../utils/socket";
+import SkeletonCard from "../components/SkeletonCard";
 
 const statusBadgeStyles = {
   pending: "bg-amber-100 text-amber-700",
@@ -48,7 +50,8 @@ const BillingPage = () => {
     if (tables.length > 0) {
       return tables.map((table) => table.tableNumber);
     }
-    return Array.from({ length: 10 }, (_, index) => index + 1);
+    const tableCount = Number(import.meta.env.VITE_TABLE_COUNT || 10);
+    return Array.from({ length: tableCount }, (_, index) => index + 1);
   }, [tables]);
 
   const fetchBill = useCallback(async (tableNumber) => {
@@ -83,6 +86,7 @@ const BillingPage = () => {
       setOccupiedTables((prev) => new Set(prev).add(order.tableNumber));
       if (selectedTable === order.tableNumber) {
         fetchBill(order.tableNumber);
+        toast(`New item added to Table ${order.tableNumber}`, { icon: "🍽️" });
       }
     };
 
@@ -125,6 +129,7 @@ const BillingPage = () => {
       setSettled(true);
       setBillData(null);
       setBillError("");
+      toast.success(`Table ${selectedTable} settled successfully!`);
       setOccupiedTables((prev) => {
         const next = new Set(prev);
         next.delete(selectedTable);
@@ -132,6 +137,7 @@ const BillingPage = () => {
       });
     } catch (error) {
       setBillError("error");
+      toast.error("Failed to settle table. Try again.");
     } finally {
       setBillLoading(false);
     }
@@ -164,7 +170,7 @@ const BillingPage = () => {
               Select a table to view the bill
             </p>
           </div>
-          <div className="grid grid-cols-5 gap-3 sm:grid-cols-6 lg:grid-cols-4">
+          <div className="grid grid-cols-5 gap-3 sm:grid-cols-8 lg:grid-cols-10">
             {tableNumbers.map((tableNumber) => {
               const isActive = selectedTable === tableNumber;
               const isOccupied = occupiedTables.has(tableNumber);
@@ -197,11 +203,8 @@ const BillingPage = () => {
             </div>
           ) : billLoading ? (
             <div className="space-y-4">
-              {[...Array(3)].map((_, index) => (
-                <div
-                  key={index}
-                  className="h-16 w-full animate-pulse rounded-2xl bg-gray-100"
-                />
+              {Array.from({ length: 3 }).map((_, index) => (
+                <SkeletonCard key={index} lines={3} />
               ))}
             </div>
           ) : settled ? (

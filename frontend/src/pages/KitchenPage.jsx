@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Coffee, Info } from "lucide-react";
+import toast from "react-hot-toast";
 import api from "../utils/api";
 import socket from "../utils/socket";
 
@@ -41,17 +42,22 @@ const formatElapsed = (createdAt, now) => {
 };
 
 const KitchenPage = () => {
+  const restaurantName = import.meta.env.VITE_RESTAURANT_NAME;
   const [orders, setOrders] = useState([]);
   const [now, setNow] = useState(Date.now());
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrders = async () => {
+      setIsLoading(true);
       try {
         const { data } = await api.get("/orders/active");
         setOrders(data.filter((order) => order.status !== "paid"));
       } catch (error) {
         setOrders([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -66,6 +72,7 @@ const KitchenPage = () => {
         }
         return [{ ...order, isNew: true }, ...prev];
       });
+      toast(`New order — Table ${order.tableNumber}`, { icon: "🔔" });
 
       setTimeout(() => {
         setOrders((prev) =>
@@ -127,6 +134,7 @@ const KitchenPage = () => {
   );
 
   const handleStatusAction = async (orderId, nextStatus) => {
+    const previousOrders = orders;
     setOrders((prev) =>
       prev.map((item) =>
         item._id === orderId ? { ...item, status: nextStatus } : item
@@ -135,8 +143,10 @@ const KitchenPage = () => {
 
     try {
       await api.patch(`/orders/${orderId}/status`, { status: nextStatus });
+      toast.success("Order updated");
     } catch (error) {
-      setOrders((prev) => prev);
+      setOrders(previousOrders);
+      toast.error("Failed to update order");
     }
   };
 
@@ -148,22 +158,42 @@ const KitchenPage = () => {
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div>
             <div className="text-2xl font-semibold text-white">
-              The Golden Fork
+              {restaurantName}
             </div>
             <div className="text-sm text-gray-400">Kitchen Display</div>
           </div>
-          <div className="text-lg text-gray-300">{formattedTime}</div>
+          <div className="hidden text-lg text-gray-300 sm:block">
+            {formattedTime}
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-8">
-        {activeOrders.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-2xl bg-[#2A2A2A] p-5 shadow-sm"
+              >
+                <div className="h-2 w-16 animate-pulse rounded-full bg-gray-700" />
+                <div className="mt-4 space-y-3">
+                  <div className="h-4 w-2/3 animate-pulse rounded-full bg-gray-700" />
+                  <div className="h-4 w-1/2 animate-pulse rounded-full bg-gray-700" />
+                  <div className="h-4 w-3/4 animate-pulse rounded-full bg-gray-700" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : activeOrders.length === 0 ? (
           <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-gray-400">
             <Coffee className="h-10 w-10" />
-            <p className="text-sm">No active orders</p>
+            <p className="text-sm">
+              No active orders right now. Waiting for incoming orders…
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {activeOrders.map((order) => {
               const config = statusConfig[order.status] || statusConfig.pending;
               const elapsed = formatElapsed(order.createdAt, now);

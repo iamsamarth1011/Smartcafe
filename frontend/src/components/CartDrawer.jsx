@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
 import api from "../utils/api";
 
@@ -44,9 +45,11 @@ const CartDrawer = ({ isOpen, onClose }) => {
       clearCart();
       setNote("");
       onClose();
+      toast.success("Order placed! We'll get started soon.");
       navigate(`/order-status?table=${tableNumber}&orderId=${data._id}`);
     } catch (requestError) {
       setError("Unable to place the order right now. Please try again.");
+      toast.error("Failed to place order. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -66,10 +69,15 @@ const CartDrawer = ({ isOpen, onClose }) => {
         onClick={onClose}
       />
       <div
-        className={`absolute bottom-0 left-0 right-0 max-h-[85vh] rounded-t-2xl bg-white shadow-lg transition-transform duration-300 ${
-          isOpen ? "translate-y-0" : "translate-y-full"
+        className={`absolute bottom-0 left-0 right-0 h-[90vh] rounded-t-2xl bg-white shadow-lg transition-transform duration-300 md:top-0 md:left-auto md:right-0 md:h-full md:w-[420px] md:rounded-none md:rounded-l-2xl ${
+          isOpen
+            ? "translate-y-0 md:translate-x-0"
+            : "translate-y-full md:translate-y-0 md:translate-x-full"
         }`}
       >
+        <div className="flex justify-center pt-3 md:hidden">
+          <span className="h-1.5 w-12 rounded-full bg-gray-200" />
+        </div>
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <h2 className="text-lg font-semibold">Your Order</h2>
           <button

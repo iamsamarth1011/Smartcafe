@@ -5,8 +5,10 @@ import QRPage from "./pages/QRPage";
 import OrderStatusPage from "./pages/OrderStatusPage";
 import KitchenPage from "./pages/KitchenPage";
 import BillingPage from "./pages/BillingPage";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const StaffHome = () => {
+  const restaurantName = import.meta.env.VITE_RESTAURANT_NAME;
   const cards = [
     {
       title: "Kitchen Display",
@@ -32,7 +34,7 @@ const StaffHome = () => {
     <div className="min-h-screen bg-cream px-6 py-16">
       <div className="mx-auto max-w-4xl text-center">
         <h1 className="text-3xl font-semibold">
-          The Golden Fork — Staff Panel
+          {restaurantName} — Staff Panel
         </h1>
         <p className="mt-3 text-sm text-gray-500">
           Manage orders, billing, and QR codes.
@@ -64,14 +66,16 @@ const StaffHome = () => {
 
 const App = () => {
   return (
-    <Routes>
-      <Route path="/" element={<StaffHome />} />
-      <Route path="/menu" element={<MenuPage />} />
-      <Route path="/qr" element={<QRPage />} />
-      <Route path="/order-status" element={<OrderStatusPage />} />
-      <Route path="/kitchen" element={<KitchenPage />} />
-      <Route path="/billing" element={<BillingPage />} />
-    </Routes>
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/" element={<StaffHome />} />
+        <Route path="/menu" element={<MenuPage />} />
+        <Route path="/qr" element={<QRPage />} />
+        <Route path="/order-status" element={<OrderStatusPage />} />
+        <Route path="/kitchen" element={<KitchenPage />} />
+        <Route path="/billing" element={<BillingPage />} />
+      </Routes>
+    </ErrorBoundary>
   );
 };
 

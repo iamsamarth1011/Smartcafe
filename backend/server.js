@@ -12,8 +12,13 @@ const orderRoutes = require("./routes/orderRoutes");
 dotenv.config();
 
 const app = express();
+const clientUrl = process.env.CLIENT_URL;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: clientUrl
+  })
+);
 app.use(express.json());
 
 connectDB();
@@ -29,7 +34,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173"
+    origin: clientUrl
   }
 });
 
