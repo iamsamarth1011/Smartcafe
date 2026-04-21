@@ -48,16 +48,16 @@ const OrderStatusPage = () => {
   const restaurantName = import.meta.env.VITE_RESTAURANT_NAME;
   const [searchParams] = useSearchParams();
   const tableParam = searchParams.get("table");
-  const orderId = searchParams.get("orderId");
+  const id = searchParams.get("orderId");
   const tableNumber = Number(tableParam);
 
-  const [order, setOrder] = useState(null);
+  const [order, setOrder] = useState({ items: [] });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchOrder = async () => {
     try {
-      const { data } = await api.get(`/orders/${orderId}`);
+      const { data } = await api.get(`/orders/${id}`);
       setOrder(data);
       setError("");
     } catch (fetchError) {
@@ -68,29 +68,31 @@ const OrderStatusPage = () => {
   };
 
   useEffect(() => {
-    if (!orderId) {
+    if (!id) {
       setError("Invalid order. Please return to the menu.");
       setIsLoading(false);
       return;
     }
 
     fetchOrder();
+  }, [id]);
 
-    const handleStatusUpdate = (payload) => {
-      if (!payload || payload.orderId !== orderId) {
-        return;
-      }
-      setOrder((prev) =>
-        prev ? { ...prev, status: payload.status } : prev
+  useEffect(() => {
+    const handleStatusUpdate = ({ orderId, status }) => {
+      console.log(
+        "Received order_status_updated:",
+        orderId,
+        status,
+        "| current id:",
+        id
       );
+      if (String(orderId) === String(id)) {
+        setOrder((prev) => ({ ...prev, status }));
+      }
     };
-
     socket.on("order_status_updated", handleStatusUpdate);
-
-    return () => {
-      socket.off("order_status_updated", handleStatusUpdate);
-    };
-  }, [orderId]);
+    return () => socket.off("order_status_updated", handleStatusUpdate);
+  }, [id]);
 
   const status = order?.status || "pending";
   const config = statusConfig[status] || statusConfig.pending;
@@ -104,7 +106,7 @@ const OrderStatusPage = () => {
     );
   }, [order]);
 
-  if (!orderId || !Number.isInteger(tableNumber) || tableNumber <= 0) {
+  if (!id || !Number.isInteger(tableNumber) || tableNumber <= 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream px-6 text-center">
         <p className="text-lg font-semibold text-gray-700">
@@ -147,6 +149,12 @@ const OrderStatusPage = () => {
 
             <div className="mt-10 w-full rounded-2xl bg-white p-6 shadow-sm">
               <h3 className="text-lg font-semibold">Order Details</h3>
+              <div className="mt-2 text-left">
+                <p className="text-sm font-medium text-gray-800">
+                  Order for: {order.customerName}
+                </p>
+                <p className="text-xs text-gray-500">{order.customerPhone}</p>
+              </div>
               <div className="mt-4 space-y-3">
                 {order.items.map((item) => (
                   <div

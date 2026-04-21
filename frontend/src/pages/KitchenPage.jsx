@@ -218,6 +218,9 @@ const KitchenPage = () => {
                         {order.status.toUpperCase()}
                       </span>
                     </div>
+                    <div className="mt-1 text-xs text-gray-400">
+                      {order.customerName} · {order.customerPhone}
+                    </div>
                     <div className="mt-1 text-xs text-gray-400">{elapsed}</div>
 
                     <div className="mt-4 space-y-3 text-sm">

@@ -1,10 +1,11 @@
 import { Routes, Route, Link } from "react-router-dom";
-import { QrCode, Receipt, UtensilsCrossed } from "lucide-react";
+import { History, QrCode, Receipt, UtensilsCrossed } from "lucide-react";
 import MenuPage from "./pages/MenuPage";
 import QRPage from "./pages/QRPage";
 import OrderStatusPage from "./pages/OrderStatusPage";
 import KitchenPage from "./pages/KitchenPage";
 import BillingPage from "./pages/BillingPage";
+import BillingHistoryPage from "./pages/BillingHistoryPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 const StaffHome = () => {
@@ -27,6 +28,12 @@ const StaffHome = () => {
       subtitle: "Print table QR posters",
       icon: QrCode,
       to: "/qr"
+    },
+    {
+      title: "Billing History",
+      subtitle: "View settled tables",
+      icon: History,
+      to: "/billing-history"
     }
   ];
 
@@ -74,6 +81,7 @@ const App = () => {
         <Route path="/order-status" element={<OrderStatusPage />} />
         <Route path="/kitchen" element={<KitchenPage />} />
         <Route path="/billing" element={<BillingPage />} />
+        <Route path="/billing-history" element={<BillingHistoryPage />} />
       </Routes>
     </ErrorBoundary>
   );

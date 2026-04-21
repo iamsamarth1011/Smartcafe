@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Receipt } from "lucide-react";
+import { CheckCircle2, History, Receipt } from "lucide-react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../utils/api";
 import socket from "../utils/socket";
@@ -159,6 +160,8 @@ const BillingPage = () => {
         minute: "2-digit"
       })
     : null;
+  const customerName = billData?.orders?.[0]?.customerName;
+  const customerPhone = billData?.orders?.[0]?.customerPhone;
 
   return (
     <div className="min-h-screen bg-cream px-6 py-10">
@@ -169,6 +172,13 @@ const BillingPage = () => {
             <p className="mt-2 text-sm text-gray-500">
               Select a table to view the bill
             </p>
+            <Link
+              to="/billing-history"
+              className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand/40 px-4 py-2 text-sm font-semibold text-brand transition hover:border-brand"
+            >
+              <History className="h-4 w-4" />
+              View History
+            </Link>
           </div>
           <div className="grid grid-cols-5 gap-3 sm:grid-cols-8 lg:grid-cols-10">
             {tableNumbers.map((tableNumber) => {
@@ -241,6 +251,11 @@ const BillingPage = () => {
                 {firstOrderTime && (
                   <p className="text-sm text-gray-500">
                     Active since {firstOrderTime}
+                  </p>
+                )}
+                {customerName && customerPhone && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    Customer: {customerName} — {customerPhone}
                   </p>
                 )}
               </div>

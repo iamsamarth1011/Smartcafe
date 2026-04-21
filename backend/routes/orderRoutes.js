@@ -6,13 +6,15 @@ const {
   updateOrderStatus,
   getActiveOrders,
   getBillByTable,
-  markTablePaid
+  markTablePaid,
+  getBillingHistory
 } = require("../controllers/orderController");
 
 const router = express.Router();
 
 router.post("/", placeOrder);
 router.get("/active", getActiveOrders);
+router.get("/history", getBillingHistory);
 router.get("/bill/:tableNumber", getBillByTable);
 router.patch("/bill/:tableNumber/pay", markTablePaid);
 router.get("/table/:tableNumber", getOrdersByTable);

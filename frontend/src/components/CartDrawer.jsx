@@ -13,14 +13,22 @@ const CartDrawer = ({ isOpen, onClose }) => {
     clearCart,
     tableNumber
   } = useCart();
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [detailsError, setDetailsError] = useState("");
   const navigate = useNavigate();
 
   const handlePlaceOrder = async () => {
     if (!tableNumber) {
       setError("Table number is missing. Please rescan your QR code.");
+      return;
+    }
+
+    if (!customerName.trim() || !customerPhone.trim()) {
+      setDetailsError("Please enter your name and phone number");
       return;
     }
 
@@ -39,11 +47,16 @@ const CartDrawer = ({ isOpen, onClose }) => {
       const { data } = await api.post("/orders", {
         tableNumber,
         items,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
         note: note.trim() || undefined
       });
 
       clearCart();
+      setCustomerName("");
+      setCustomerPhone("");
       setNote("");
+      setDetailsError("");
       onClose();
       toast.success("Order placed! We'll get started soon.");
       navigate(`/order-status?table=${tableNumber}&orderId=${data._id}`);
@@ -137,6 +150,34 @@ const CartDrawer = ({ isOpen, onClose }) => {
             <p className="text-lg font-semibold text-brand">
               ${totalPrice.toFixed(2)}
             </p>
+          </div>
+          <div className="mt-4 space-y-3">
+            <p className="text-sm font-medium text-gray-700">Your Details</p>
+            <input
+              type="text"
+              required
+              placeholder="Your full name"
+              value={customerName}
+              onChange={(event) => {
+                setCustomerName(event.target.value);
+                setDetailsError("");
+              }}
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+            />
+            <input
+              type="tel"
+              required
+              placeholder="Your phone number"
+              value={customerPhone}
+              onChange={(event) => {
+                setCustomerPhone(event.target.value);
+                setDetailsError("");
+              }}
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+            />
+            {detailsError && (
+              <p className="text-sm text-red-600">{detailsError}</p>
+            )}
           </div>
           <label className="mt-4 block text-sm font-medium text-gray-700">
             Add a note for kitchen

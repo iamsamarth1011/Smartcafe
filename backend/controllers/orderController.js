@@ -4,9 +4,13 @@ const Table = require("../models/Table");
 
 const placeOrder = async (req, res) => {
   try {
-    const { tableNumber, items, note } = req.body;
+    const { tableNumber, items, note, customerName, customerPhone } = req.body;
 
     const parsedTableNumber = Number(tableNumber);
+    const trimmedName =
+      typeof customerName === "string" ? customerName.trim() : "";
+    const trimmedPhone =
+      typeof customerPhone === "string" ? customerPhone.trim() : "";
 
     if (
       !Number.isInteger(parsedTableNumber) ||
@@ -17,6 +21,12 @@ const placeOrder = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Table number and items are required" });
+    }
+
+    if (!trimmedName || !trimmedPhone) {
+      return res
+        .status(400)
+        .json({ message: "Customer name and phone number are required" });
     }
 
     const sanitizedItems = items.map((item) => ({
@@ -47,6 +57,8 @@ const placeOrder = async (req, res) => {
     const order = await Order.create({
       tableNumber: parsedTableNumber,
       sessionId,
+      customerName: trimmedName,
+      customerPhone: trimmedPhone,
       items: sanitizedItems,
       totalAmount,
       note
@@ -115,17 +127,31 @@ const updateOrderStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status" });
     }
 
-    const order = await Order.findByIdAndUpdate(
+    const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id,
       { status },
       { new: true, runValidators: true }
     );
 
-    if (!order) {
+    if (!updatedOrder) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    res.json(order);
+    const io = req.app.locals.io;
+    if (io) {
+      io.emit("order_status_updated", {
+        orderId: updatedOrder._id.toString(),
+        status: updatedOrder.status,
+        tableNumber: updatedOrder.tableNumber
+      });
+      console.log(
+        "Emitted order_status_updated:",
+        updatedOrder._id.toString(),
+        updatedOrder.status
+      );
+    }
+
+    res.json(updatedOrder);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -169,6 +195,8 @@ const getBillByTable = async (req, res) => {
       items: order.items,
       status: order.status,
       totalAmount: order.totalAmount,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
       createdAt: order.createdAt,
       note: order.note
     }));
@@ -232,6 +260,39 @@ const markTablePaid = async (req, res) => {
   }
 };
 
+const getBillingHistory = async (req, res) => {
+  try {
+    const { tableNumber, date } = req.query;
+    const query = { status: "paid" };
+
+    if (tableNumber) {
+      const parsedTableNumber = Number(tableNumber);
+      if (!Number.isInteger(parsedTableNumber) || parsedTableNumber <= 0) {
+        return res.status(400).json({ message: "Invalid table number" });
+      }
+      query.tableNumber = parsedTableNumber;
+    }
+
+    if (date) {
+      const parsedDate = new Date(date);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ message: "Invalid date" });
+      }
+      const start = new Date(parsedDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(parsedDate);
+      end.setHours(23, 59, 59, 999);
+      query.createdAt = { $gte: start, $lte: end };
+    }
+
+    const orders = await Order.find(query).sort({ updatedAt: -1 });
+
+    res.json({ count: orders.length, orders });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   placeOrder,
   getOrderById,
@@ -239,5 +300,6 @@ module.exports = {
   updateOrderStatus,
   getActiveOrders,
   getBillByTable,
-  markTablePaid
+  markTablePaid,
+  getBillingHistory
 };
